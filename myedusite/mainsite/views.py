@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import *
 from .models import *
@@ -43,17 +43,28 @@ class MainsiteHome(ListView):
 def about(request):
     return render(request, 'mainsite/about.html', {'menu': menu, 'title': 'О Нас'})
 
-def addpage(request):
-    if request.method == 'POST':
-        form = AddPostForm(request.POST, request.FILES)
-        if form.is_valid():
-            #print(form.cleaned_data)
-            form.save()
-            return redirect('home')
-        
-    else:
-        form = AddPostForm()
-    return render(request, 'mainsite/addpage.html', {'form': form, 'menu': menu, 'title': 'Добавление статьи'})
+class AddPage(CreateView):
+    form_class = AddPostForm
+    template_name = 'mainsite/addpage.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Добавление статьи'
+        context['menu'] = menu
+        return context
+
+
+# def addpage(request):
+#     if request.method == 'POST':
+#         form = AddPostForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             #print(form.cleaned_data)
+#             form.save()
+#             return redirect('home')
+#
+#     else:
+#         form = AddPostForm()
+#     return render(request, 'mainsite/addpage.html', {'form': form, 'menu': menu, 'title': 'Добавление статьи'})
 
 def contact(request):
     return HttpResponse("Обратная связь")
@@ -61,18 +72,31 @@ def contact(request):
 def login(request):
     return HttpResponse("Авторизация")
 
-def show_post(request, post_slug):
-    post = get_object_or_404(Mainsite, slug=post_slug)
+class ShowPost(DetailView):
+    model = Mainsite
+    template_name = 'mainsite/post.html'
+    slug_url_kwarg = 'post_slug'
+    context_object_name = 'post'
 
-    context = {
-        'post': post,
-        'menu': menu,
-        'title': post.title,
-        'cat_selected': post.cat_id,
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = context['post']
+        context['menu'] = menu
+        return context
 
-    }
 
-    return render(request, 'mainsite/post.html', context=context)
+# def show_post(request, post_slug):
+#     post = get_object_or_404(Mainsite, slug=post_slug)
+#
+#     context = {
+#         'post': post,
+#         'menu': menu,
+#         'title': post.title,
+#         'cat_selected': post.cat_id,
+#
+#     }
+#
+#     return render(request, 'mainsite/post.html', context=context)
 
 class MainsiteCategory(ListView):
     model = Mainsite
