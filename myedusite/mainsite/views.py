@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.views.generic import ListView
 
 from .forms import *
 from .models import *
@@ -10,17 +11,34 @@ menu = [{'title': "О сайте", 'url_name': 'about'},
         {'title': "Войти", 'url_name': 'login'}
 ]
 
-def index(request):
-    posts = Mainsite.objects.all()
 
-    context = {
-        'posts': posts,
-        'menu': menu,
-        'title': 'Главная страница',
-        'cat_selected': 0,
+class MainsiteHome(ListView):
+    model = Mainsite
+    template_name = 'mainsite/index.html'
+    context_object_name = 'posts'
 
-    }
-    return render(request, 'mainsite/index.html', context=context)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = menu
+        context['title'] = 'Главная страница'
+        context['cat_selected'] = 0
+        return context
+
+    def get_queryset(self):
+        return Mainsite.objects.filter(is_published=True)
+
+
+# def index(request):
+#     posts = Mainsite.objects.all()
+#
+#     context = {
+#         'posts': posts,
+#         'menu': menu,
+#         'title': 'Главная страница',
+#         'cat_selected': 0,
+#
+#     }
+#     return render(request, 'mainsite/index.html', context=context)
 
 def about(request):
     return render(request, 'mainsite/about.html', {'menu': menu, 'title': 'О Нас'})
@@ -55,6 +73,7 @@ def show_post(request, post_slug):
     }
 
     return render(request, 'mainsite/post.html', context=context)
+
 
 def show_category(request, cat_slug):
     posts = Mainsite.objects.filter(cat__slug=cat_slug)
