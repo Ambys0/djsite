@@ -74,17 +74,32 @@ def show_post(request, post_slug):
 
     return render(request, 'mainsite/post.html', context=context)
 
+class MainsiteCategory(ListView):
+    model = Mainsite
+    template_name = 'mainsite/index.html'
+    context_object_name = 'posts'
+    allow_empty = False
 
-def show_category(request, cat_slug):
-    posts = Mainsite.objects.filter(cat__slug=cat_slug)
+    def get_queryset(self):
+        return Mainsite.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Категория - ' + str(context['posts'][0].cat)
+        context['menu'] = menu
+        context['cat_selected'] = context['posts'][0].cat_id
+        return context
 
-    context = {
-        'posts': posts,
-        'menu': menu,
-        'title': 'Отображение по рубрикам',
-        'cat_selected': cat_slug,
-
-    }
-
-    return render(request, 'mainsite/index.html', context=context)
+# def show_category(request, cat_slug):
+#     posts = Mainsite.objects.filter(cat__slug=cat_slug)
+#
+#
+#     context = {
+#         'posts': posts,
+#         'menu': menu,
+#         'title': 'Отображение по рубрикам',
+#         'cat_selected': cat_slug,
+#
+#     }
+#
+#     return render(request, 'mainsite/index.html', context=context)
