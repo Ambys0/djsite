@@ -1,28 +1,24 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import *
 from .models import *
-
-menu = [{'title': "О сайте", 'url_name': 'about'},
-        {'title': "Добавить статью", 'url_name': 'add_page'},
-        {'title': "Обратная связь", 'url_name': 'contact'},
-        {'title': "Войти", 'url_name': 'login'}
-]
+from .utils import *
 
 
-class MainsiteHome(ListView):
+class MainsiteHome(DataMixin, ListView):
     model = Mainsite
     template_name = 'mainsite/index.html'
     context_object_name = 'posts'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['menu'] = menu
-        context['title'] = 'Главная страница'
-        context['cat_selected'] = 0
-        return context
+        c_def = self.get_user_context(title="Главная страница")
+        return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
         return Mainsite.objects.filter(is_published=True)
@@ -43,15 +39,17 @@ class MainsiteHome(ListView):
 def about(request):
     return render(request, 'mainsite/about.html', {'menu': menu, 'title': 'О Нас'})
 
-class AddPage(CreateView):
+class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddPostForm
     template_name = 'mainsite/addpage.html'
+    success_url = reverse_lazy('home')
+    login_url = reverse_lazy('home')
+    raise_exception = True
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Добавление статьи'
-        context['menu'] = menu
-        return context
+        c_def = self.get_user_context(title="Добавление статьи")
+        return dict(list(context.items()) + list(c_def.items()))
 
 
 # def addpage(request):
@@ -72,7 +70,7 @@ def contact(request):
 def login(request):
     return HttpResponse("Авторизация")
 
-class ShowPost(DetailView):
+class ShowPost(DataMixin, DetailView):
     model = Mainsite
     template_name = 'mainsite/post.html'
     slug_url_kwarg = 'post_slug'
@@ -80,9 +78,8 @@ class ShowPost(DetailView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = context['post']
-        context['menu'] = menu
-        return context
+        c_def = self.get_user_context(title=context['post'])
+        return dict(list(context.items()) + list(c_def.items()))
 
 
 # def show_post(request, post_slug):
@@ -98,7 +95,7 @@ class ShowPost(DetailView):
 #
 #     return render(request, 'mainsite/post.html', context=context)
 
-class MainsiteCategory(ListView):
+class MainsiteCategory(DataMixin, ListView):
     model = Mainsite
     template_name = 'mainsite/index.html'
     context_object_name = 'posts'
@@ -109,10 +106,9 @@ class MainsiteCategory(ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'Категория - ' + str(context['posts'][0].cat)
-        context['menu'] = menu
-        context['cat_selected'] = context['posts'][0].cat_id
-        return context
+        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].cat),
+                                      cat_selected=context['posts'][0].cat_id)
+        return dict(list(context.items()) + list(c_def.items()))
 
 # def show_category(request, cat_slug):
 #     posts = Mainsite.objects.filter(cat__slug=cat_slug)
