@@ -23,20 +23,9 @@ class MainsiteHome(DataMixin, ListView):
         return dict(list(context.items()) + list(c_def.items()))
 
     def get_queryset(self):
-        return Mainsite.objects.filter(is_published=True)
+        return Mainsite.objects.filter(is_published=True).select_related('cat')
 
 
-# def index(request):
-#     posts = Mainsite.objects.all()
-#
-#     context = {
-#         'posts': posts,
-#         'menu': menu,
-#         'title': 'Главная страница',
-#         'cat_selected': 0,
-#
-#     }
-#     return render(request, 'mainsite/index.html', context=context)
 
 def about(request):
     return render(request, 'mainsite/about.html', {'menu': menu, 'title': 'О Нас'})
@@ -54,23 +43,9 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
         return dict(list(context.items()) + list(c_def.items()))
 
 
-# def addpage(request):
-#     if request.method == 'POST':
-#         form = AddPostForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             #print(form.cleaned_data)
-#             form.save()
-#             return redirect('home')
-#
-#     else:
-#         form = AddPostForm()
-#     return render(request, 'mainsite/addpage.html', {'form': form, 'menu': menu, 'title': 'Добавление статьи'})
-
 def contact(request):
     return HttpResponse("Обратная связь")
 
-# def login(request):
-#     return HttpResponse("Авторизация")
 
 class ShowPost(DataMixin, DetailView):
     model = Mainsite
@@ -84,19 +59,6 @@ class ShowPost(DataMixin, DetailView):
         return dict(list(context.items()) + list(c_def.items()))
 
 
-# def show_post(request, post_slug):
-#     post = get_object_or_404(Mainsite, slug=post_slug)
-#
-#     context = {
-#         'post': post,
-#         'menu': menu,
-#         'title': post.title,
-#         'cat_selected': post.cat_id,
-#
-#     }
-#
-#     return render(request, 'mainsite/post.html', context=context)
-
 class MainsiteCategory(DataMixin, ListView):
     model = Mainsite
     template_name = 'mainsite/index.html'
@@ -104,27 +66,15 @@ class MainsiteCategory(DataMixin, ListView):
     allow_empty = False
 
     def get_queryset(self):
-        return Mainsite.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True)
+        return Mainsite.objects.filter(cat__slug=self.kwargs['cat_slug'], is_published=True).select_related('cat')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title='Категория - ' + str(context['posts'][0].cat),
-                                      cat_selected=context['posts'][0].cat_id)
+        c = Category.objects.get(slug=self.kwargs['cat_slug'])
+        c_def = self.get_user_context(title='Категория - ' + str(c.name),
+                                      cat_selected=c.pk)
         return dict(list(context.items()) + list(c_def.items()))
 
-# def show_category(request, cat_slug):
-#     posts = Mainsite.objects.filter(cat__slug=cat_slug)
-#
-#
-#     context = {
-#         'posts': posts,
-#         'menu': menu,
-#         'title': 'Отображение по рубрикам',
-#         'cat_selected': cat_slug,
-#
-#     }
-#
-#     return render(request, 'mainsite/index.html', context=context)
 
 class RegisterUser(DataMixin, CreateView):
     form_class = RegisterUserForm
